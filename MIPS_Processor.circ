@@ -106,21 +106,21 @@
     <comp lib="2" loc="(1240,570)" name="Multiplexer">
       <a name="width" val="4"/>
     </comp>
-    <comp lib="9" loc="(312,343)" name="Text">
+    <comp lib="9" loc="(310,340)" name="Text">
       <a name="color" val="#ff0000"/>
       <a name="font" val="SansSerif bold 23"/>
       <a name="text" val="From Control Unit"/>
     </comp>
-    <comp lib="9" loc="(914,844)" name="Text">
+    <comp lib="9" loc="(910,840)" name="Text">
       <a name="color" val="#f90000"/>
       <a name="font" val="SansSerif bold 50"/>
       <a name="text" val="Branch, Jump, and Shift not implemented yet."/>
     </comp>
-    <comp lib="9" loc="(940,587)" name="Text">
+    <comp lib="9" loc="(940,585)" name="Text">
       <a name="font" val="SansSerif bold 8"/>
       <a name="text" val="jump address"/>
     </comp>
-    <comp lib="9" loc="(953,355)" name="Text">
+    <comp lib="9" loc="(950,355)" name="Text">
       <a name="color" val="#ff0000"/>
       <a name="font" val="SansSerif bold 23"/>
       <a name="text" val="OpCode goes to Control Unit"/>
@@ -240,20 +240,20 @@
       <a name="appearance" val="logisim_evolution"/>
       <a name="label" val="PC_Register"/>
     </comp>
-    <comp lib="9" loc="(376,587)" name="Text">
+    <comp lib="9" loc="(375,585)" name="Text">
       <a name="color" val="#819bc2"/>
       <a name="text" val="branch_offset_sign_extension"/>
     </comp>
-    <comp lib="9" loc="(594,758)" name="Text">
+    <comp lib="9" loc="(590,755)" name="Text">
       <a name="color" val="#9c4168"/>
       <a name="font" val="SansSerif bold 36"/>
       <a name="text" val="PC Module"/>
     </comp>
-    <comp lib="9" loc="(640,326)" name="Text">
+    <comp lib="9" loc="(640,325)" name="Text">
       <a name="color" val="#819bc2"/>
       <a name="text" val="PC + 1"/>
     </comp>
-    <comp lib="9" loc="(649,580)" name="Text">
+    <comp lib="9" loc="(645,580)" name="Text">
       <a name="color" val="#819bc2"/>
       <a name="text" val="PC + 1 + branch_offset"/>
     </comp>
@@ -332,7 +332,7 @@
       <a name="label" val="Instruction_Memory"/>
       <a name="labelvisible" val="true"/>
     </comp>
-    <comp lib="9" loc="(352,224)" name="Text">
+    <comp lib="9" loc="(350,220)" name="Text">
       <a name="text" val="PC"/>
     </comp>
     <wire from="(390,270)" to="(470,270)"/>
@@ -530,13 +530,13 @@
       <a name="label" val="t4"/>
       <a name="width" val="4"/>
     </comp>
-    <comp lib="9" loc="(317,215)" name="Text">
+    <comp lib="9" loc="(315,215)" name="Text">
       <a name="text" val="Register_Enable"/>
     </comp>
-    <comp lib="9" loc="(443,313)" name="Text">
+    <comp lib="9" loc="(440,310)" name="Text">
       <a name="text" val="zero write ignored"/>
     </comp>
-    <comp lib="9" loc="(717,1128)" name="Text">
+    <comp lib="9" loc="(715,1125)" name="Text">
       <a name="color" val="#962633"/>
       <a name="font" val="SansSerif bold 36"/>
       <a name="text" val="Register File"/>
@@ -673,5 +673,67 @@
     <wire from="(940,330)" to="(940,840)"/>
     <wire from="(950,340)" to="(1100,340)"/>
     <wire from="(950,340)" to="(950,990)"/>
+  </circuit>
+  <circuit name="MEM">
+    <a name="appearance" val="logisim_evolution"/>
+    <a name="circuit" val="MEM"/>
+    <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="simulationFrequency" val="1.0"/>
+    <comp lib="0" loc="(320,170)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="ALU_RESULT"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="0" loc="(320,290)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="WRITE_DATA"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="0" loc="(430,170)" name="Bit Extender">
+      <a name="in_width" val="4"/>
+      <a name="out_width" val="8"/>
+    </comp>
+    <comp lib="0" loc="(460,110)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="CLK"/>
+    </comp>
+    <comp lib="0" loc="(500,70)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="MEM_READ"/>
+    </comp>
+    <comp lib="0" loc="(650,70)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="MEM_WRITE"/>
+    </comp>
+    <comp lib="0" loc="(930,240)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="MEMTOREG"/>
+      <a name="type" val="output"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="5" loc="(600,150)" name="RAM">
+      <a name="appearance" val="logisim_evolution"/>
+      <a name="dataWidth" val="4"/>
+    </comp>
+    <wire from="(320,170)" to="(390,170)"/>
+    <wire from="(320,290)" to="(460,290)"/>
+    <wire from="(430,170)" to="(570,170)"/>
+    <wire from="(460,110)" to="(500,110)"/>
+    <wire from="(460,240)" to="(460,290)"/>
+    <wire from="(460,240)" to="(600,240)"/>
+    <wire from="(500,110)" to="(500,220)"/>
+    <wire from="(500,220)" to="(600,220)"/>
+    <wire from="(500,70)" to="(540,70)"/>
+    <wire from="(540,210)" to="(600,210)"/>
+    <wire from="(540,70)" to="(540,210)"/>
+    <wire from="(570,160)" to="(570,170)"/>
+    <wire from="(570,160)" to="(600,160)"/>
+    <wire from="(580,200)" to="(600,200)"/>
+    <wire from="(580,90)" to="(580,200)"/>
+    <wire from="(580,90)" to="(660,90)"/>
+    <wire from="(650,70)" to="(660,70)"/>
+    <wire from="(660,70)" to="(660,90)"/>
+    <wire from="(840,240)" to="(930,240)"/>
   </circuit>
 </project>
