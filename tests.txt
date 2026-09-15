@@ -1,0 +1,146 @@
+================================================================
+ CSE 210 - 4-bit MIPS validation programs   (Lab B1, Group 3)
+ Split each block below into inputs/test_N.txt
+ Every program leaves its verifiable result in $t0.
+ Press RESET before each run: tests 8 and 10 depend on $sp = 1111
+ coming from the assembler's automatic init instruction.
+
+ To run all using the assembler_batch.py, use when you have
+ the required txt files in inputs folder:
+ python3 assembler_batch.py --all  
+
+ For singular instr_mem file generation, use this instead:
+ python3 assembler_batch.py inputs/test_3.txt
+================================================================
+
+
+---------------- test_1.txt --- arithmetic --- $t0 = 1000 (8) ---
+addi $t1, $zero, 7
+addi $t2, $zero, 3
+add $t0, $t1, $t2
+subi $t0, $t0, 2
+sub $t3, $t1, $t2
+add $t0, $t0, $t3
+addi $t0, $t0, 1
+subi $t0, $t0, 5
+add $t0, $t0, $zero
+halt: j halt
+
+
+---------------- test_2.txt --- logic --- $t0 = 1001 (9) --------
+addi $t1, $zero, 12
+addi $t2, $zero, 10
+and $t0, $t1, $t2
+or $t3, $t1, $t2
+nor $t4, $t1, $t2
+add $t0, $t0, $t4
+andi $t0, $t0, 7
+ori $t0, $t0, 4
+sub $t0, $t3, $t0
+halt: j halt
+
+
+---------------- test_3.txt --- shifts --- $t0 = 0001 (1) -------
+addi $t1, $zero, 3
+sll $t0, $t1, 2
+srl $t2, $t0, 1
+sub $t0, $t0, $t2
+sll $t3, $t2, 1
+srl $t3, $t3, 2
+add $t0, $t0, $t3
+sll $t0, $t0, 1
+srl $t0, $t0, 1
+halt: j halt
+
+
+---------------- test_4.txt --- beq --- $t0 = 1000 (8) ----------
+addi $t1, $zero, 5
+addi $t2, $zero, 5
+addi $t0, $zero, 1
+beq $t1, $t2, skip
+addi $t0, $t0, 4
+skip: addi $t3, $zero, 2
+beq $t1, $t3, halt
+addi $t0, $t0, 6
+addi $t0, $t0, 1
+halt: j halt
+
+
+---------------- test_5.txt --- 2-iteration loop --- $t0 = 0011 (3)
+addi $t0, $zero, 0
+addi $t1, $zero, 2
+loop: add $t0, $t0, $t1
+subi $t1, $t1, 1
+bneq $t1, $zero, loop
+halt: j halt
+
+
+---------------- test_6.txt --- 5-iteration loop --- $t0 = 1000 (8)
+addi $t0, $zero, 0
+addi $t1, $zero, 5
+loop: add $t0, $t0, $t1
+subi $t1, $t1, 1
+bneq $t1, $zero, loop
+andi $t0, $t0, 14
+srl $t0, $t0, 1
+addi $t0, $t0, 1
+add $t0, $t0, $zero
+halt: j halt
+
+
+---------------- test_7.txt --- data memory --- $t0 = 1111 (15) -
+addi $t1, $zero, 9
+sw $t1, 2($zero)
+addi $t2, $zero, 6
+sw $t2, 3($zero)
+lw $t3, 2($zero)
+lw $t4, 3($zero)
+add $t0, $t3, $t4
+sw $t0, 5($zero)
+lw $t0, 5($zero)
+halt: j halt
+
+
+---------------- test_8.txt --- stack push/pop --- $t0 = 1001 (9)
+addi $t1, $zero, 3
+subi $sp, $sp, 1
+sw $t1, 0($sp)
+addi $t1, $zero, 6
+subi $sp, $sp, 1
+sw $t1, 0($sp)
+lw $t2, 0($sp)
+addi $sp, $sp, 1
+lw $t0, 0($sp)
+add $t0, $t0, $t2
+
+
+---------------- test_9.txt --- jump --- $t0 = 0110 (6) ---------
+addi $t0, $zero, 1
+j three
+addi $t0, $t0, 7
+addi $t0, $t0, 7
+three: addi $t0, $t0, 2
+j seven
+addi $t0, $t0, 5
+seven: sll $t0, $t0, 2
+srl $t0, $t0, 1
+halt: j halt
+
+
+---------------- test_10.txt --- factorial(3) --- $t0 = 0110 (6) -
+add $t4, $sp, $zero
+addi $t1, $zero, 3
+push: subi $sp, $sp, 1
+sw $t1, 0($sp)
+subi $t1, $t1, 1
+bneq $t1, $zero, push
+addi $t0, $zero, 1
+pop: lw $t1, 0($sp)
+addi $sp, $sp, 1
+addi $t2, $zero, 0
+mul: add $t2, $t2, $t0
+subi $t1, $t1, 1
+bneq $t1, $zero, mul
+add $t0, $t2, $zero
+bneq $sp, $t4, pop
+halt: j halt
