@@ -29,14 +29,30 @@ attributes are Evolution-specific.
 
 ```
 .
-├── MIPS_Processor.circ        the processor (open this in Logisim Evolution)
-├── control_rom.txt            16 control words  -> load into Control_ROM
-├── gen_control_rom.py         regenerates control_rom.txt from a readable table
-├── assembler.py               assembler, single file at a time
-├── assembler_batch.py         assembler, whole inputs/ folder at once
-├── inputs/                    assembly test programs (test_1.txt … test_10.txt)
-└── outputs/                   generated machine code (instr_mem_1.txt … instr_mem_10.txt)
+├── MIPS_Processor.circ            the full processor — open this in Logisim Evolution
+├── README.md
+│
+├── docs/
+│   ├── Instruction_Table.pdf      our B1-3 opcode assignment
+│   └── Jan_2026_CSE_210_MIPS.pdf  the assignment specification
+│
+├── individual_modules/            modules developed separately, before integration
+│   ├── Control_Unit.circ
+│   └── mipsALU.circ
+│
+└── testing/
+    ├── assembler.py               assembler, single file at a time
+    ├── assembler_batch.py         assembler, whole inputs/ folder at once
+    ├── control_rom.txt            16 control words -> load into Control_ROM
+    ├── tests.txt                  all ten test programs in one readable file
+    ├── inputs/                    test_1.txt … test_10.txt
+    └── outputs/                   instr_mem_1.txt … instr_mem_10.txt (generated)
 ```
+
+`MIPS_Processor.circ` is the integrated design and the only file you need to open to run
+anything. The two circuits under `individual_modules/` are kept for reference and for the
+report — they show the ALU and control unit as they were built and tested in isolation
+before being merged into the top-level circuit.
 
 ---
 
@@ -219,13 +235,15 @@ Every don't-care bit is written as a hard `0`. On paper a don't-care is free, bu
 must hold *something*, and a stray `1` in `RegWrite` on a jump would silently corrupt a
 register.
 
-To change a signal, edit the table at the top of `gen_control_rom.py` and run it:
+The words live in `testing/control_rom.txt` as a Logisim `v2.0 raw` image:
 
-```bash
-python3 gen_control_rom.py
+```
+v2.0 raw
+0301 6006 0201 c001 c000 c002 0087 7400 c003 c004 2800 6002 6001 6000 6003 6005
 ```
 
-It rewrites `control_rom.txt` and prints the new words in hex and binary.
+To change a signal, edit the corresponding hex word and reload the image into the ROM. The
+bit layout table above tells you which bit to flip.
 
 ---
 
@@ -238,6 +256,12 @@ Two scripts, same assembler underneath:
   one to use for the test suite.
 
 Both accept the same assembly syntax and produce Logisim `v2.0 raw` ROM images.
+
+All commands below are run from inside the `testing/` folder:
+
+```bash
+cd testing
+```
 
 ### Assembling all tests
 
@@ -262,7 +286,7 @@ file has a syntax error the rest still assemble; the failure is reported with it
 
 ```bash
 python3 assembler_batch.py inputs/test_3.txt    # still writes outputs/instr_mem_3.txt
-python3 assembler.py myprogram.asm -o myrom.txt
+python3 assembler.py inputs/test_3.txt          # single-file script
 ```
 
 ### Other options
@@ -313,8 +337,8 @@ Numbers may be written as `5`, `-3`, `0b0101` or `0xA`.
 
 ```mermaid
 flowchart TD
-    A[Write assembly in inputs/test_N.txt] --> B[python3 assembler_batch.py --all]
-    B --> C[outputs/instr_mem_N.txt]
+    A["Write assembly in testing/inputs/test_N.txt"] --> B["cd testing<br/>python3 assembler_batch.py --all"]
+    B --> C["testing/outputs/instr_mem_N.txt"]
     C --> D[Right-click Instruction_Memory ROM<br/>Load Image]
     D --> E[Simulate > Reset Simulation]
     E --> F[Simulate > Auto-Tick Enabled]
@@ -325,10 +349,10 @@ flowchart TD
 
 **Step 1 — load the control ROM.** This only needs doing once, unless the control words
 change. Open the `CONTROL` subcircuit, right-click `Control_ROM` &rarr; **Load Image** &rarr;
-select `control_rom.txt`.
+select `testing/control_rom.txt`.
 
 **Step 2 — load your program.** In `main`, right-click the `Instruction_Memory` ROM &rarr;
-**Load Image** &rarr; select the `outputs/instr_mem_N.txt` you want to run.
+**Load Image** &rarr; select the `testing/outputs/instr_mem_N.txt` you want to run.
 
 **Step 3 — reset.** **Simulate &rarr; Reset Simulation** (Ctrl+R). This clears the registers
 and the PC. Do this before every run — several tests assume registers start at zero.
@@ -352,7 +376,7 @@ read `$t0` whenever you look.
 
 ## Test suite
 
-Ten programs in `inputs/`, ordered so that each one depends only on behaviour the earlier
+Ten programs in `testing/inputs/`, ordered so that each one depends only on behaviour the earlier
 ones already prove. Run them in sequence: the first failure points at a specific module
 instead of leaving you to guess among six.
 
@@ -368,6 +392,9 @@ instead of leaving you to guess among six.
 | `test_8.txt` | stack push and pop via `$sp` | `1001` (9) |
 | `test_9.txt` | two forward jumps | `0110` (6) |
 | `test_10.txt` | factorial(3) — stack plus nested loops | `0110` (6) |
+
+All ten are also collected in `testing/tests.txt`, one after another with headers, if you
+would rather read them in a single file.
 
 `test_5.txt` is the best place to start: nine instruction executions, done in seconds under
 auto-tick, and it covers the whole fetch–decode–branch path.
@@ -395,8 +422,8 @@ inner loop performs each multiplication as repeated addition.
 
 ## Team
 
-| Name | Student ID | Contribution |
-|---|---|---|
-| | | |
-| | | |
-| | | |
+| Name | Student ID |
+|---|---|
+| Ahnaf Jamil | 2305079 |
+| | |
+| | |
