@@ -1,0 +1,10 @@
+addi $t1, $zero, 3
+subi $sp, $sp, 1
+sw $t1, 0($sp)
+addi $t1, $zero, 6
+subi $sp, $sp, 1
+sw $t1, 0($sp)
+lw $t2, 0($sp)
+addi $sp, $sp, 1
+lw $t0, 0($sp)
+add $t0, $t0, $t2

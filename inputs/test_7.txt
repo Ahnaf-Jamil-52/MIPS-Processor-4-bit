@@ -1,0 +1,10 @@
+addi $t1, $zero, 9
+sw $t1, 2($zero)
+addi $t2, $zero, 6
+sw $t2, 3($zero)
+lw $t3, 2($zero)
+lw $t4, 3($zero)
+add $t0, $t3, $t4
+sw $t0, 5($zero)
+lw $t0, 5($zero)
+halt: j halt

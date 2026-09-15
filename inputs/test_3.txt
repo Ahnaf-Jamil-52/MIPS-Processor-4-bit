@@ -1,0 +1,10 @@
+addi $t1, $zero, 3
+sll $t0, $t1, 2
+srl $t2, $t0, 1
+sub $t0, $t0, $t2
+sll $t3, $t2, 1
+srl $t3, $t3, 2
+add $t0, $t0, $t3
+sll $t0, $t0, 1
+srl $t0, $t0, 1
+halt: j halt

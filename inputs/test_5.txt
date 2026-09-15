@@ -1,0 +1,6 @@
+addi $t0, $zero, 0
+addi $t1, $zero, 2
+loop: add $t0, $t0, $t1
+subi $t1, $t1, 1
+bneq $t1, $zero, loop
+halt: j halt

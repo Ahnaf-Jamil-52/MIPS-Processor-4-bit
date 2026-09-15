@@ -1,0 +1,10 @@
+addi $t0, $zero, 1
+j three
+addi $t0, $t0, 7
+addi $t0, $t0, 7
+three: addi $t0, $t0, 2
+j seven
+addi $t0, $t0, 5
+seven: sll $t0, $t0, 2
+srl $t0, $t0, 1
+halt: j halt
