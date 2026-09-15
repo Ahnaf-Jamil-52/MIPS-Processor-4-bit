@@ -424,6 +424,8 @@ inner loop performs each multiplication as repeated addition.
 
 | Name | Student ID |
 |---|---|
+| Nafis Iqbal | 2305065 |
+| Maskat Rahman | 2305066 |
+| Md. Misbah Uddin Rafi | 2305069 |
 | Ahnaf Jamil | 2305079 |
-| | |
-| | |
+| Swayam Saukarja| 2305085 |
