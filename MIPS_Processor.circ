@@ -111,6 +111,12 @@
       <a name="width" val="4"/>
     </comp>
     <comp lib="0" loc="(290,500)" name="Constant"/>
+    <comp lib="0" loc="(680,590)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
     <comp lib="0" loc="(80,540)" name="Pin">
       <a name="appearance" val="classic"/>
     </comp>
@@ -330,7 +336,10 @@
     <wire from="(330,410)" to="(330,580)"/>
     <wire from="(330,410)" to="(960,410)"/>
     <wire from="(330,580)" to="(350,580)"/>
-    <wire from="(570,500)" to="(640,500)"/>
+    <wire from="(570,500)" to="(620,500)"/>
+    <wire from="(620,500)" to="(620,590)"/>
+    <wire from="(620,500)" to="(640,500)"/>
+    <wire from="(620,590)" to="(680,590)"/>
     <wire from="(80,540)" to="(160,540)"/>
     <wire from="(860,500)" to="(920,500)"/>
     <wire from="(920,500)" to="(920,570)"/>
