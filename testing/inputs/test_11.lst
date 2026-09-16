@@ -1,0 +1,10 @@
+addr  machine code       source
+----  -----------------  ------
+00    1101000001101111  D06F  addi $sp, $zero, 15   ; auto: $sp init
+01    1010000001100000  A060  sw $sp, 0($zero)
+02    0111000000010000  7010  lw $t0, 0($zero)
+                         halt:
+03    0110000000110000  6030  j halt
+
+labels
+  halt         03
