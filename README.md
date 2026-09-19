@@ -29,30 +29,36 @@ attributes are Evolution-specific.
 
 ```
 .
-├── MIPS_Processor.circ            the full processor — open this in Logisim Evolution
+├── MIPS_Processor.circ                the full processor — open this in Logisim Evolution
 ├── README.md
 │
 ├── docs/
-│   ├── Instruction_Table.pdf      our B1-3 opcode assignment
-│   └── Jan_2026_CSE_210_MIPS.pdf  the assignment specification
+│   ├── B1_Group3_MIPS_4-bit_Report.pdf    the written report
+│   ├── Instruction_Table.pdf              our B1-3 opcode assignment
+│   └── Jan_2026_CSE_210_MIPS.pdf          the assignment specification
 │
-├── individual_modules/            modules developed separately, before integration
+├── individual_modules/                modules developed and tested separately, before integration
 │   ├── Control_Unit.circ
-│   └── mipsALU.circ
+│   ├── Instruction_Memory_Unit.circ
+│   ├── Memory_Unit.circ
+│   ├── mipsALU.circ
+│   ├── PC_Unit.circ
+│   └── Register_File_Unit.circ
 │
 └── testing/
-    ├── assembler.py               assembler, single file at a time
-    ├── assembler_batch.py         assembler, whole inputs/ folder at once
-    ├── control_rom.txt            16 control words -> load into Control_ROM
-    ├── tests.txt                  all ten test programs in one readable file
-    ├── inputs/                    test_1.txt … test_10.txt
-    └── outputs/                   instr_mem_1.txt … instr_mem_10.txt (generated)
+    ├── assembler.py                    assembler, single file at a time
+    ├── assembler_batch.py              assembler, whole inputs/ folder at once
+    ├── control_rom.txt                 16 control words -> load into Control_ROM
+    ├── instruction_memory.txt          a sample assembled program -> load into Instruction_Memory
+    ├── tests.txt                       all ten test programs in one readable file
+    ├── inputs/                         test_1.txt … test_10.txt
+    └── outputs/                        instr_mem_1.txt … instr_mem_10.txt (generated)
 ```
 
 `MIPS_Processor.circ` is the integrated design and the only file you need to open to run
-anything. The two circuits under `individual_modules/` are kept for reference and for the
-report — they show the ALU and control unit as they were built and tested in isolation
-before being merged into the top-level circuit.
+anything. The six circuits under `individual_modules/` are kept for reference and for the
+report — they show each module as it was built and tested in isolation before being merged
+into the top-level circuit.
 
 ---
 
@@ -61,16 +67,24 @@ before being merged into the top-level circuit.
 Every group in the course gets a different opcode ordering. Ours is the **B1, Group 3**
 sequence: `OJNCAEPLGKMFDBHI`.
 
-| Opcode | Instruction | Type | | Opcode | Instruction | Type |
-|---|---|---|---|---|---|---|
-| `0000` | `bneq` | I | | `1000` | `or`   | R |
-| `0001` | `srl`  | S | | `1001` | `nor`  | R |
-| `0010` | `beq`  | I | | `1010` | `sw`   | I |
-| `0011` | `sub`  | R | | `1011` | `andi` | I |
-| `0100` | `add`  | R | | `1100` | `subi` | I |
-| `0101` | `and`  | R | | `1101` | `addi` | I |
-| `0110` | `j`    | J | | `1110` | `ori`  | I |
-| `0111` | `lw`   | I | | `1111` | `sll`  | S |
+| Instruction Code | Instruction ID | Instruction Type | Instruction |
+|:---:|:---:|---|:---:|
+| `0000` | O | Control &nbsp;[I] | `bneq` |
+| `0001` | J | Logic &nbsp;&nbsp;[S] | `srl`  |
+| `0010` | N | Control &nbsp;[I] | `beq`  |
+| `0011` | C | Arithmetic [R] | `sub`  |
+| `0100` | A | Arithmetic [R] | `add`  |
+| `0101` | E | Logic &nbsp;&nbsp;[R] | `and`  |
+| `0110` | P | Control &nbsp;[J] | `j`    |
+| `0111` | L | Memory &nbsp;&nbsp;[I] | `lw`   |
+| `1000` | G | Logic &nbsp;&nbsp;[R] | `or`   |
+| `1001` | K | Logic &nbsp;&nbsp;[R] | `nor`  |
+| `1010` | M | Memory &nbsp;&nbsp;[I] | `sw`   |
+| `1011` | F | Logic &nbsp;&nbsp;[I] | `andi` |
+| `1100` | D | Arithmetic [I] | `subi` |
+| `1101` | B | Arithmetic [I] | `addi` |
+| `1110` | H | Logic &nbsp;&nbsp;[I] | `ori`  |
+| `1111` | I | Logic &nbsp;&nbsp;[S] | `sll`  |
 
 ### Instruction formats
 
@@ -157,20 +171,127 @@ shift left, shift right, and a constant. It also produces a **Zero** flag used b
 logic.
 
 **`MEM`** — data memory, also serving as stack memory. Addressed by the ALU result, so
-`lw $t1, 4($sp)` reaches the stack simply by computing `$sp + 4`.
+`lw $t1, 4($sp)` reaches the stack simply by computing `$sp + 4`. It stores on the **falling**
+clock edge rather than the rising edge — see the Design Approach section for why.
 
 **`CONTROL`** — the microprogrammed control unit. See the next section.
 
-### How they fit together
+### Elements outside the modules
 
-The opcode leaves the instruction splitter and enters `CONTROL`, which looks up a 16-bit
-control word and fans it out to every other module. Each module then does exactly one of the
-things it is capable of. The only combinational logic outside the modules is the branch gate
-and three multiplexers (RegDst, ALUSrc, MemToReg).
+Four pieces of logic sit on the top-level sheet rather than inside any module, and the
+instruction cannot execute without them:
+
+| Element | Function |
+|---|---|
+| **Instruction field splitter** | Breaks the 16-bit instruction into its four 4-bit fields |
+| **RegDst multiplexer** | Selects the destination register: instruction bits 7–4 (I/S-type) or bits 3–0 (R-type) |
+| **ALUSrc multiplexer** | Selects ALU input B: a register value, or the immediate / shamt field |
+| **MemToReg multiplexer** | Selects the write-back value: the ALU result, or the memory read data |
+| **Branch gate** (one XOR, one AND) | Computes `branchTaken = Branch AND (Zero XOR BranchNE)` |
 
 Signals are routed with **tunnels** rather than long wires, so the top-level sheet stays
 readable. A tunnel labelled `RegWrite` beside the control unit is electrically the same node
 as every other tunnel labelled `RegWrite`.
+
+### The five-stage instruction cycle
+
+**Stage 1 — Instruction Fetch.** The rising edge loads the program counter. Its output
+addresses the instruction memory ROM, which produces the 16-bit instruction combinationally.
+The splitter immediately breaks it into fields, and the PC module begins computing `PC + 1`
+and the branch target for this instruction.
+
+**Stage 2 — Instruction Decode.** The opcode enters the control ROM, which emits the 16-bit
+control word; a splitter fans it out into the individual control signals. At the same time,
+the two register fields enter the register file, and both read ports produce their values
+combinationally. The RegDst multiplexer selects the destination register number.
+
+**Stage 3 — Execute.** The ALUSrc multiplexer chooses operand B, either the second register
+value or the immediate field. The ALU computes all eight operations in parallel, and
+`ALUOp` selects which one becomes the output. The Zero flag emerges at the same time and
+feeds the branch gate.
+
+**Stage 4 — Memory.** The ALU result addresses the data memory; the second register value is
+the potential write data. A store commits at the falling edge, halfway through the cycle; a
+load's data appears combinationally with no edge required. Every other instruction leaves this
+stage untouched.
+
+**Stage 5 — Write Back.** The MemToReg multiplexer selects either the memory data or the ALU
+result and presents it at the register file's write-data input. If `RegWrite` is 1, the write
+decoder has exactly one register ready to load. Nothing has changed yet — the value is
+waiting.
+
+**The closing edge.** At the next rising edge, the selected register captures the write-back
+value and the program counter captures the next address the PC module has been holding ready
+— both at once, both from values that settled before the edge, so there is no race between
+them.
+
+---
+
+## Demonstration program
+
+This program exercises nearly the whole machine: both addressing modes, a backward branch
+that loops, a conditional branch that is not taken, an unconditional jump that skips an
+instruction, stack pushes, a stack load, arithmetic, and both shift operations.
+
+| Addr | Assembly | Machine code | Purpose |
+|:---:|---|:---:|---|
+| `00` | `addi $sp, $zero, 1111` | `D06F` | inserted automatically — stack pointer init |
+| `01` | `addi $t1, $zero, 3` | `D023` | loop counter |
+| `02` | `addi $t2, $zero, 0` | `D030` | accumulator |
+| `03` | `loop: add $t2, $t2, $t1` | `4323` | R-type add, RegDst = 1 |
+| `04` | `subi $sp, $sp, 1` | `C661` | push, part 1 — make room |
+| `05` | `sw $t1, 0($sp)` | `A620` | push, part 2 — store to stack |
+| `06` | `subi $t1, $t1, 1` | `C221` | decrement counter |
+| `07` | `bneq $t1, $zero, loop` | `020B` | backward branch, offset −5 |
+| `08` | `lw $t3, 0($sp)` | `7640` | load from the top of the stack |
+| `09` | `add $t0, $t2, $t3` | `4341` | combine the two results |
+| `0A` | `beq $t0, $zero, skip` | `2101` | conditional branch, not taken |
+| `0B` | `sll $t0, $t0, 1` | `F111` | S-type left shift |
+| `0C` | `skip: j done` | `60E0` | unconditional jump |
+| `0D` | `ori $t0, $t0, 0` | `E110` | skipped by the jump — proves it worked |
+| `0E` | `done: srl $t0, $t0, 1` | `1111` | S-type right shift |
+| `0F` | `halt: j halt` | `60F0` | self-jump — the machine's halt |
+
+**Final result: `$t0 = 0111` (7).** Supporting values at the end: `$t2 = 0110`, `$t3 = 0001`,
+`$sp = 1100`, and the stack holds `RAM[14] = 0011`, `RAM[13] = 0010`, `RAM[12] = 0001`.
+
+### Full execution trace
+
+Every cycle of the program, with every control signal, the ALU inputs, and what commits at
+the closing edge.
+
+| PC | Instr | Op | RegDst | RegWr | ALUSrc | MemRd | MemWr | M2Reg | Br | BrNE | Jmp | ALU A | ALU B | Result | Zero | bTaken | Commits at edge | Next PC |
+|:--:|:--:|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|:--:|
+| 00 | D06F | addi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0000 | 1111 | 1111 | 0 | 0 | `$sp ← 1111` | 01 |
+| 01 | D023 | addi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0000 | 0011 | 0011 | 0 | 0 | `$t1 ← 0011` | 02 |
+| 02 | D030 | addi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0000 | 0000 | 0000 | 1 | 0 | `$t2 ← 0000` | 03 |
+| 03 | 4323 | add  | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0000 | 0011 | 0011 | 0 | 0 | `$t2 ← 0011` | 04 |
+| 04 | C661 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1111 | 0001 | 1110 | 0 | 0 | `$sp ← 1110` | 05 |
+| 05 | A620 | sw   | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 1110 | 0000 | 1110 | 0 | 0 | `RAM[14] ← 0011` | 06 |
+| 06 | C221 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0011 | 0001 | 0010 | 0 | 0 | `$t1 ← 0010` | 07 |
+| 07 | 020B | bneq | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0010 | 0000 | 0010 | 0 | **1** | — | 03 |
+| 03 | 4323 | add  | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0011 | 0010 | 0101 | 0 | 0 | `$t2 ← 0101` | 04 |
+| 04 | C661 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1110 | 0001 | 1101 | 0 | 0 | `$sp ← 1101` | 05 |
+| 05 | A620 | sw   | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 1101 | 0000 | 1101 | 0 | 0 | `RAM[13] ← 0010` | 06 |
+| 06 | C221 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0010 | 0001 | 0001 | 0 | 0 | `$t1 ← 0001` | 07 |
+| 07 | 020B | bneq | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0001 | 0000 | 0001 | 0 | **1** | — | 03 |
+| 03 | 4323 | add  | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0101 | 0001 | 0110 | 0 | 0 | `$t2 ← 0110` | 04 |
+| 04 | C661 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1101 | 0001 | 1100 | 0 | 0 | `$sp ← 1100` | 05 |
+| 05 | A620 | sw   | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 1100 | 0000 | 1100 | 0 | 0 | `RAM[12] ← 0001` | 06 |
+| 06 | C221 | subi | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0001 | 0001 | 0000 | 1 | 0 | `$t1 ← 0000` | 07 |
+| 07 | 020B | bneq | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0000 | 0000 | 0000 | **1** | **0** | — loop exits | 08 |
+| 08 | 7640 | lw   | 0 | 1 | 1 | **1** | 0 | **1** | 0 | 0 | 0 | 1100 | 0000 | 1100 | 0 | 0 | `$t3 ← 0001` | 09 |
+| 09 | 4341 | add  | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0110 | 0001 | 0111 | 0 | 0 | `$t0 ← 0111` | 0A |
+| 0A | 2101 | beq  | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0111 | 0000 | 0111 | 0 | 0 | — not taken | 0B |
+| 0B | F111 | sll  | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0111 | 0001 | 1110 | 0 | 0 | `$t0 ← 1110` | 0C |
+| 0C | 60E0 | j    | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **1** | — | — | 0000 | 1 | 0 | — skips 0D | 0E |
+| 0E | 1111 | srl  | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1110 | 0001 | 0111 | 0 | 0 | `$t0 ← 0111` | 0F |
+| 0F | 60F0 | j    | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | — | — | 0000 | 1 | 0 | halt — jumps to itself | 0F |
+
+Note the row at address `0A`: the ALU result is `0111`, so Zero is 0 and a `beq` is correctly
+not taken. Note also rows `0C` and `0F`: `Jump = 1` forces the next PC regardless of
+everything else, which is why the jump multiplexer sits after the branch multiplexer inside
+the PC module.
 
 ---
 
@@ -180,7 +301,7 @@ The assignment requires a **microprogrammed** control unit: the control signals 
 a ROM as *control words*, not in hardwired gates. Ours is a 16-row ROM addressed directly by
 the 4-bit opcode. It has no clock and no state — it is a pure lookup table.
 
-**13 control signals packed into a 16-bit word** (3 bits spare for future use):
+**12 control signals packed into a 16-bit word** (4 bits spare for future use):
 
 | Bit | Signal | What it decides |
 |---|---|---|
@@ -203,33 +324,26 @@ the 4-bit opcode. It has no clock and no state — it is a pure lookup table.
 |---|---|---|---|---|---|---|---|---|
 | operation | add | sub | and | or | nor | sll | srl | const |
 
-### Why `Branch` and `BranchNE` are separate
-
-`PC_Module` expects a signal meaning *the branch is being taken*, not *this is a branch
-instruction*. The control ROM cannot know that on its own — it depends on the ALU's Zero
-flag, which does not exist until the comparison has actually run. So the ROM emits the branch
-**type**, and one small gate at the top level combines it with Zero:
-
-```
-branchTaken = Branch AND (Zero XOR BranchNE)
-```
-
-For `beq` (`BranchNE = 0`) the XOR passes Zero through. For `bneq` (`BranchNE = 1`) it
-inverts. For every other instruction `Branch = 0` and the AND holds the output low, so a
-stray zero result can never cause an accidental jump.
-
 ### The 16 control words
 
-| Addr | Instruction | Word | | Addr | Instruction | Word |
-|---|---|---|---|---|---|---|
-| 0 | `bneq` | `0301` | | 8 | `or` | `c003` |
-| 1 | `srl` | `6006` | | 9 | `nor` | `c004` |
-| 2 | `beq` | `0201` | | A | `sw` | `2800` |
-| 3 | `sub` | `c001` | | B | `andi` | `6002` |
-| 4 | `add` | `c000` | | C | `subi` | `6001` |
-| 5 | `and` | `c002` | | D | `addi` | `6000` |
-| 6 | `j` | `0087` | | E | `ori` | `6003` |
-| 7 | `lw` | `7400` | | F | `sll` | `6005` |
+| Addr | Instr | Word | RegDst | RegWrite | ALUSrc | MemRead | MemWrite | MemToReg | Branch | BranchNE | Jump | ALUOp |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| 0 | `bneq` | `0301` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | `001` sub |
+| 1 | `srl`  | `6006` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `110` srl |
+| 2 | `beq`  | `0201` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | `001` sub |
+| 3 | `sub`  | `c001` | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `001` sub |
+| 4 | `add`  | `c000` | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `000` add |
+| 5 | `and`  | `c002` | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `010` and |
+| 6 | `j`    | `0087` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | `111` const |
+| 7 | `lw`   | `7400` | 0 | 1 | 1 | 1 | 0 | 1 | 0 | 0 | 0 | `000` add |
+| 8 | `or`   | `c003` | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `011` or |
+| 9 | `nor`  | `c004` | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `100` nor |
+| A | `sw`   | `2800` | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | `000` add |
+| B | `andi` | `6002` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `010` and |
+| C | `subi` | `6001` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `001` sub |
+| D | `addi` | `6000` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `000` add |
+| E | `ori`  | `6003` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `011` or |
+| F | `sll`  | `6005` | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | `101` sll |
 
 Every don't-care bit is written as a hard `0`. On paper a don't-care is free, but a ROM cell
 must hold *something*, and a stray `1` in `RegWrite` on a jump would silently corrupt a
@@ -409,14 +523,51 @@ inner loop performs each multiplication as repeated addition.
 
 ---
 
-## Special features
+## Design approach discussion
 
-- **Stack memory** with `$sp`, initialised automatically at program start
-- **`push` / `pop` pseudo-instructions** in the assembler, expanded before addresses are
-  assigned so labels and branch offsets stay correct
-- **Batch assembler** with a listing file per program for debugging
-- **16-bit control word** with spare bits, so adding a signal does not require rebuilding
-  the ROM width or the splitter
+**Q. Why is the control word 16 bits wide when only 12 signals are used?**
+
+**Ans:** A 16-bit word is exactly four hexadecimal digits, so every control word can be read
+and hand-edited without any mental arithmetic — a 12-bit word would produce ragged values
+that don't line up on a hex boundary. The four spare bits also let a new control signal be
+added later without changing the ROM width, the splitter configuration, or any wiring, and
+they cost nothing extra: a ROM allocates storage in whole words regardless of how many bits
+within that word are actually used.
+
+**Q. Why are Branch and BranchNE two separate signals instead of a single encoded PCSrc field?**
+
+**Ans:** Because the decision of whether to branch cannot be made by the control unit at all
+— it depends on the ALU's Zero flag, which does not exist until the operands have actually
+been compared. The ROM can only know what *kind* of branch this is; the real decision has to
+be made downstream, after the comparison. Encoding the branch type as two bits and combining
+them with the Zero flag in a two-gate circuit (`branchTaken = Branch AND (Zero XOR BranchNE)`)
+costs one XOR and one AND gate, and lets both branch instructions share the same comparison
+hardware. The alternative — a single Branch bit plus separate logic to distinguish `beq` from
+`bneq` — would require decoding the opcode a second time outside the control unit.
+
+**Q. Why does the data memory store on the falling edge while every register captures on the rising edge?**
+
+**Ans:** To separate the two events in time within a single cycle. The registers and the
+program counter capture at the rising edge, which is the boundary between one instruction and
+the next. If the memory also wrote at that same instant, the store would be racing the
+instruction change, since the address and write data are derived combinationally from the
+instruction being retired and begin changing the moment the program counter moves. Writing at
+the falling edge — halfway through the cycle — means the store commits at a point where the
+address and data have already been stable for a while and will remain stable afterwards.
+Reads need no such treatment because the read path is purely combinational, which is also what
+lets a `lw` fetch its data and have it written into a register within the same single cycle.
+
+**Q. How is stack memory implemented without dedicated push and pop instructions?**
+
+**Ans:** All sixteen opcodes were already allocated by our assigned instruction set, so there
+was no spare encoding left for dedicated stack instructions. Instead, the stack is a
+*convention* rather than a mechanism. Because the data memory's address always comes from the
+ALU result, and because `$sp` is just an ordinary register in the register file, a stack
+access is simply an ordinary `lw` or `sw` that happens to use `$sp` as its base register. The
+stack occupies the top of the same data memory and grows downward as `$sp` is decremented. Our
+assembler additionally provides `push` and `pop` as pseudo-instructions that expand to the
+two-instruction sequences (`subi $sp, $sp, 1` + `sw`, and `lw` + `addi $sp, $sp, 1`), so the
+programmer gets the convenience without the hardware needing to know anything about it.
 
 ---
 
@@ -428,4 +579,4 @@ inner loop performs each multiplication as repeated addition.
 | Maskat Rahman | 2305066 |
 | Md. Misbah Uddin Rafi | 2305069 |
 | Ahnaf Jamil | 2305079 |
-| Swayam Saukarja| 2305085 |
+| Swayam Saukarja | 2305085 |
